@@ -133,16 +133,18 @@ def generate(
     device: str = "cuda:0",
 ) -> None:
     """Generate and publish one complete result directory on the local filesystem."""
-    _validate_camera_height(camera_height)
-    _validate_sampling(steps, guidance, seed)
+    camera_height = _validate_camera_height(camera_height)
+    steps, guidance, seed = _validate_sampling(steps, guidance, seed)
     target = torch.device(device)
-    if target.type != "cuda" or not torch.cuda.is_available():
+    if target.type != "cuda" or torch.version.cuda is None or not torch.cuda.is_available():
         raise RuntimeError(
             "SpaceFold panorama inference requires a CUDA-enabled PyTorch installation"
         )
+    if torch.cuda.get_device_capability(target)[0] < 8:
+        raise RuntimeError(
+            "SpaceFold panorama inference requires native BF16 (CUDA capability 8.0+)"
+        )
     torch.cuda.set_device(target.index if target.index is not None else torch.cuda.current_device())
-    if not torch.cuda.is_bf16_supported():
-        raise RuntimeError("SpaceFold panorama inference requires a CUDA GPU with BF16 support")
     volfill_root, da2_root, da2_checkpoint = panorama_paths(
         volfill_root=volfill_root, da2_root=da2_root, da2_checkpoint=da2_checkpoint
     )

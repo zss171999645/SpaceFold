@@ -1,6 +1,7 @@
 """Exercise panorama preprocessing with the real photograph used by the example."""
 
 import hashlib
+import json
 import os
 import tempfile
 import unittest
@@ -11,6 +12,20 @@ PHOTO = Path(__file__).resolve().parents[1] / "examples/downloads/warehouse.jpg"
 
 
 class PanoramaInputTests(unittest.TestCase):
+    def test_accepted_numpy_scalars_are_serializable_scene_settings(self):
+        import numpy as np
+
+        from spacefold.panorama import _validate_camera_height, _validate_sampling
+
+        height = np.float32(1.65)
+        normalized_height = _validate_camera_height(height)
+        self.assertIs(type(normalized_height), float)
+        steps, guidance, seed = _validate_sampling(50, np.float32(3.0), 0)
+        settings = dict(
+            camera_height_m=normalized_height, steps=steps, guidance=guidance, seed=seed
+        )
+        self.assertEqual(json.loads(json.dumps(settings))["camera_height_m"], float(height))
+
     @unittest.skipUnless(
         find_spec("torch") and find_spec("PIL") and find_spec("safetensors"),
         "requires the panorama inference dependencies",

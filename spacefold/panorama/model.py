@@ -153,7 +153,7 @@ def sample_latent(
     seed: int,
 ) -> torch.Tensor:
     """Integrate the conditional flow from Gaussian noise at t=1 to t=0."""
-    _validate_sampling(steps, guidance, seed)
+    steps, guidance, seed = _validate_sampling(steps, guidance, seed)
     if visible.device.type != "cuda" or visible.device != image_tokens.device:
         raise ValueError("Visible geometry and image tokens must be on the same CUDA device")
     if visible.shape != (1, 16, 32, 32, 32) or image_tokens.shape != (1, 2048, 768):

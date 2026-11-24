@@ -45,7 +45,7 @@ def _scene_bounds(points: np.ndarray, camera: np.ndarray) -> tuple[np.ndarray, n
 
 def room_from_distance(distance: np.ndarray, camera_height: float) -> tuple[RoomFrame, np.ndarray]:
     """Back-project every native DA² pixel and fit the bounding cube in metres."""
-    _validate_camera_height(camera_height)
+    camera_height = _validate_camera_height(camera_height)
     if distance.shape != (546, 1092) or not np.isfinite(distance).all() or (distance <= 0).any():
         raise ValueError("Expected a finite positive 546 × 1092 radial distance map")
     height, width = distance.shape
