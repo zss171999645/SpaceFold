@@ -12,7 +12,7 @@ For a scene represented by surface points, create a NumPy NPZ file with these ar
 | `bbox_min` | `(3,)` | Lower XYZ corner, in the same units |
 | `bbox_max` | `(3,)` | Upper XYZ corner, in the same units |
 
-Choose a cube around the scene for isotropic voxels. The builder uses every input voxel inside the half-open bounds and measures distance in each level’s voxel units, with truncation at three voxels. It checks that the final tree retains every occupied input voxel. The CPU builder materializes a 1024³ grid and requires several GiB of host memory.
+Choose a cube around the scene for isotropic voxels. The builder keeps points satisfying `bbox_min <= point < bbox_max` on all three axes. Points in the same R1024 voxel share one surface seed. Float64 bounds retain their precision during voxelization. Distances are measured in each level’s voxel units and truncated at three voxels. The builder checks that the final tree retains every occupied input voxel. It materializes a 1024³ grid and requires several GiB of host memory.
 
 ```bash
 python -m spacefold.geometry build --input points.npz --output scene.tree.npz

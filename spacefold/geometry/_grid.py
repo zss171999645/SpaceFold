@@ -74,6 +74,16 @@ def child_coords(parents_zyx: np.ndarray) -> np.ndarray:
     return np.ascontiguousarray(children.reshape(-1, 3), dtype=np.int32)
 
 
+def _bbox(lo, hi):
+    corners = np.asarray((lo, hi))
+    if corners.shape != (2, 3) or corners.dtype.kind not in "iuf":
+        raise ValueError("expected finite increasing XYZ bounds")
+    lower, upper = corners.astype(np.result_type(corners.dtype, np.float32), copy=False)
+    if not (np.isfinite(corners).all() and (upper > lower).all()):
+        raise ValueError("expected finite increasing XYZ bounds")
+    return lower, upper
+
+
 def coords_to_points(
     coords_zyx: np.ndarray,
     bbox_min: np.ndarray,
@@ -81,8 +91,7 @@ def coords_to_points(
     resolution: int,
 ) -> np.ndarray:
     coords = np.asarray(coords_zyx, dtype=np.float32)
-    bbox_min = np.asarray(bbox_min, dtype=np.float32)
-    bbox_max = np.asarray(bbox_max, dtype=np.float32)
+    bbox_min, bbox_max = _bbox(bbox_min, bbox_max)
     voxel_size = (bbox_max - bbox_min) / float(resolution)
     return np.ascontiguousarray(
         bbox_min[None, :] + (coords[:, ::-1] + 0.5) * voxel_size[None, :],

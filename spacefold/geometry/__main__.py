@@ -87,9 +87,10 @@ def _decode(args):
     import numpy as np
     import torch
 
+    from ._grid import _bbox
     from ._io import save_npz
     from .model import LATENT_SHAPE
-    from .surface import _bbox, predicted_surface_points
+    from .surface import predicted_surface_points
 
     with np.load(args.input, allow_pickle=False) as source:
         raw = np.asarray(source["raw"], dtype=np.float32)

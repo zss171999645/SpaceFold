@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 from scipy import ndimage
 
-from ._grid import AdaptiveTUDF, child_coords, coords_to_points
+from ._grid import AdaptiveTUDF, _bbox, child_coords, coords_to_points
 from .octree import (
     SURFACE_SAFE_POLICY,
     _pool_any,
@@ -14,26 +14,21 @@ from .octree import (
 )
 
 
-def _bbox(lo, hi):
-    lower, upper = np.asarray(lo, dtype=np.float32), np.asarray(hi, dtype=np.float32)
-    if (
-        lower.shape != (3,)
-        or upper.shape != (3,)
-        or not (np.isfinite(lower).all() and np.isfinite(upper).all() and (upper > lower).all())
-    ):
-        raise ValueError("expected finite increasing XYZ bounds")
-    return lower, upper
-
-
 def surface_indices(points, lo, hi):
     """Map world XYZ points to unique ZYX voxel IDs inside a half-open box."""
     lo, hi = _bbox(lo, hi)
     points = np.asarray(points)
-    if points.ndim != 2 or points.shape[1] != 3 or not np.isfinite(points).all():
+    if (
+        points.ndim != 2
+        or points.shape[1] != 3
+        or points.dtype.kind not in "iuf"
+        or not np.isfinite(points).all()
+    ):
         raise ValueError("expected finite world XYZ points of shape [N, 3]")
-    grid = np.floor((points - lo) / ((hi - lo) / 1024)).astype(np.int32)
-    inside = ((grid >= 0) & (grid < 1024)).all(axis=1)
-    xyz = grid[inside].astype(np.uint32)
+    inside = ((points >= lo) & (points < hi)).all(axis=1)
+    grid = np.floor((points[inside] - lo) / ((hi - lo) / 1024))
+    # Subtraction can round a valid point just below the upper face to index 1024.
+    xyz = np.clip(grid, 0, 1023).astype(np.uint32)
     ids = (xyz[:, 2] * 1024 + xyz[:, 1]) * 1024 + xyz[:, 0]
     return np.unique(ids), inside
 
