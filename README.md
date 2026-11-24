@@ -81,7 +81,7 @@ Open `generated_geometry.ply` in a point-cloud viewer. `prediction_points.npz` s
 
 From the checkout, run `python -m unittest discover -s tests -v` to exercise the setup command and CPU geometry routines. To include the panorama orientation check, install the inference dependencies and fetch the example photograph using the command above. The tests use `examples/downloads/warehouse.jpg` by default.
 
-The device-selection check uses two visible CUDA GPUs. Set `SPACEFOLD_TEST_GEOMETRY_WEIGHTS` to the geometry safetensors file and `SPACEFOLD_TEST_GEOMETRY_LATENT` to an encoded or generated latent NPZ to run it.
+The device-selection checks use two visible CUDA GPUs. Set `SPACEFOLD_TEST_GEOMETRY_WEIGHTS` to the geometry safetensors file and `SPACEFOLD_TEST_GEOMETRY_LATENT` to an encoded or generated latent NPZ. To test the full encoder and decoder, also prepare the VolFill source and set `SPACEFOLD_TEST_GEOMETRY_TREE` to a five-level tree NPZ.
 
 ## Sources and licensing
 
