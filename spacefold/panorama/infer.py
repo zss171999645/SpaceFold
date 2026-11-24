@@ -3,6 +3,8 @@
 import argparse
 from pathlib import Path
 
+from spacefold.dependencies import DependencyError, panorama_paths
+
 from . import _validate_camera_height, _validate_sampling
 
 
@@ -16,7 +18,7 @@ def main() -> None:
         "--vae-checkpoint", type=Path, required=True, help="SpaceFold geometry VAE safetensors."
     )
     parser.add_argument(
-        "--da2-checkpoint", type=Path, required=True, help="Official DA-2 model.safetensors."
+        "--da2-checkpoint", type=Path, help="Override the managed DA² model.safetensors."
     )
     parser.add_argument(
         "--latent-stats",
@@ -24,11 +26,9 @@ def main() -> None:
         required=True,
         help="SpaceFold mean and std in numeric NPZ format.",
     )
+    parser.add_argument("--da2-root", type=Path, help="Override the managed DA-2 source checkout.")
     parser.add_argument(
-        "--da2-root", type=Path, required=True, help="Root of the DA-2 source checkout."
-    )
-    parser.add_argument(
-        "--volfill-root", type=Path, required=True, help="Root of the VolFill source checkout."
+        "--volfill-root", type=Path, help="Override the managed VolFill source checkout."
     )
     parser.add_argument(
         "--camera-height",
@@ -58,14 +58,18 @@ def main() -> None:
         args.panorama,
         args.dit_checkpoint,
         args.vae_checkpoint,
-        args.da2_checkpoint,
         args.latent_stats,
     ):
         if not path.is_file():
             parser.error(f"Missing input file: {path}")
-    for root in (args.da2_root, args.volfill_root):
-        if not root.is_dir():
-            parser.error(f"Missing upstream source directory: {root}")
+    try:
+        args.volfill_root, args.da2_root, args.da2_checkpoint = panorama_paths(
+            volfill_root=args.volfill_root,
+            da2_root=args.da2_root,
+            da2_checkpoint=args.da2_checkpoint,
+        )
+    except (DependencyError, OSError) as error:
+        parser.error(str(error))
 
     from .pipeline import generate
 

@@ -10,6 +10,7 @@ dist/
 .env
 .env.*
 /external/
+/third_party/
 /weights/
 /data/
 /outputs/

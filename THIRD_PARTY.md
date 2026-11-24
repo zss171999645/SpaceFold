@@ -1,6 +1,6 @@
 # Third-party components
 
-SpaceFold calls external model implementations through their Python interfaces. Obtain these sources and any associated weights from their respective publishers, under the terms applicable to your use.
+SpaceFold calls external model implementations through their Python interfaces. The opt-in `spacefold-setup` command fetches the pinned revisions directly from the publishers into a per-user cache outside this source tree. The optional `--with-da2-weights` flag includes the official DA² checkpoint. Each source and model remains subject to its applicable upstream terms.
 
 | Component | Use in this implementation | Source and terms |
 |---|---|---|

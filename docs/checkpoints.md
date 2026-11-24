@@ -9,15 +9,14 @@ The single-image pipeline takes two SpaceFold state files, the normalization sta
 | `latent_stats.npz` | Two ordinary NumPy arrays, `mean` and `std`. Each has dtype float32, shape `(16,)`, and finite entries. Every standard deviation exceeds 1e-6. Compute normalized latents by subtracting the channel mean and dividing by the channel standard deviation. Both visible and target latents use the generator's train-split statistics. |
 | `da2.safetensors` | The official DA² parameter file for the frozen panorama network. Obtain it directly under the publisher's terms. [Model card](https://huggingface.co/haodongli/DA-2/blob/0d55ccb5e46b8ed4715fae3a4c04fc897f1689f3/README.md) |
 
-For the external DA² model, the tested revision is `0d55ccb5e46b8ed4715fae3a4c04fc897f1689f3`. Its `model.safetensors` file has 1,378,513,064 bytes and SHA-256 `d8ea568fc3dfb7d7432e5b763de499dd03fb6dc1c2020d84639f35e2dfa4f78e`. The following commands fetch that file from its publisher and check its identity.
+For the external DA² model, the tested revision is `0d55ccb5e46b8ed4715fae3a4c04fc897f1689f3`. Its `model.safetensors` file has 1,378,513,064 bytes and SHA-256 `d8ea568fc3dfb7d7432e5b763de499dd03fb6dc1c2020d84639f35e2dfa4f78e`. To download the public DA² file and its pinned source dependencies, use the explicit setup command.
 
 ```bash
-mkdir -p weights
-curl --fail --location --output weights/da2.safetensors \
-  https://huggingface.co/haodongli/DA-2/resolve/0d55ccb5e46b8ed4715fae3a4c04fc897f1689f3/model.safetensors
-printf '%s  %s\n' d8ea568fc3dfb7d7432e5b763de499dd03fb6dc1c2020d84639f35e2dfa4f78e \
-  weights/da2.safetensors | sha256sum --check
+spacefold-setup --with-da2-weights
+spacefold-setup --check --with-da2-weights
 ```
+
+The second command verifies the chosen cache offline. Inference reads the cached DA² file automatically. If you already obtained that file, pass its path with `--da2-checkpoint`. Use `--da2-root` and `--volfill-root` to select existing source directories. The two SpaceFold-trained checkpoints and their statistics are supplied separately.
 
 The SpaceFold codec produces a 16-channel latent on a 32³ grid. The reference generator has 16 transformer blocks, width 960 and 15 attention heads. Its 32 input channels concatenate a noisy target latent and a normalized visible latent. SpaceFold imports model layers from the VolFill source checkout. VolFill's published weights and 16³ training statistics belong to its own model.
 

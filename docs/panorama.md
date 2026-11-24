@@ -17,6 +17,8 @@ The reference DA² source revision is `d659838585f2bc9967c7e9367af573795271dbbb`
 
 The reference VolFill source revision is `a0c8e7779ccee318e7a75bb2d273290d4ffb76ed`. The sampler calls its dense 3D DiT with PyTorch scaled dot-product attention. Consult each upstream project's terms for the components you obtain. [VolFill source](https://github.com/ngoductuanlhp/VolFill/tree/a0c8e7779ccee318e7a75bb2d273290d4ffb76ed)
 
+Run `spacefold-setup --with-da2-weights` once to prepare the official sources and DA² checkpoint. Explicit paths supplied through `--volfill-root`, `--da2-root` or `--da2-checkpoint` take precedence.
+
 Run on a CUDA GPU with native BF16 support. The geometry encoder and decoder run in FP16, and visible pixel voxelization and Euclidean distance transforms run in host memory. Choose a fresh output directory.
 
 ```bash
@@ -26,9 +28,6 @@ python -m spacefold.panorama.infer \
   --dit-checkpoint weights/spacefold-panorama.safetensors \
   --vae-checkpoint weights/spacefold-geometry.safetensors \
   --latent-stats weights/latent_stats.npz \
-  --da2-root external/DA-2 \
-  --da2-checkpoint weights/da2.safetensors \
-  --volfill-root external/VolFill \
   --steps 50 --guidance 3 --seed 0 \
   --output outputs/room
 ```
@@ -58,11 +57,12 @@ from pathlib import Path
 
 import torch
 
+from spacefold.dependencies import VOLFILL, cached_source
 from spacefold.panorama.model import load_generator, load_latent_stats, sample_latent
 
 device = torch.device("cuda:0")
 generator = load_generator(
-    Path("weights/spacefold-panorama.safetensors"), Path("external/VolFill"), device
+    Path("weights/spacefold-panorama.safetensors"), cached_source(VOLFILL), device
 )
 mean, std = load_latent_stats(Path("weights/latent_stats.npz"))
 visible = (visible_mean.detach().cpu().half().float() - mean) / std

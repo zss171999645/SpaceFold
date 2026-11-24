@@ -1,4 +1,4 @@
-"""Publish a completed result directory without overwriting another run."""
+"""Publish a completed directory without overwriting existing content."""
 
 import os
 from contextlib import contextmanager, suppress

@@ -28,15 +28,15 @@ Both commands write a new tree file. Use a distinct output name for each input.
 
 ## Encode and decode
 
-Use an NVIDIA CUDA device with the VolFill sparse modules, spconv and Triton installed. Pass the VolFill checkout with `--volfill-root`. This option is optional when its Python modules are already importable. The CLI takes the SpaceFold geometry safetensors checkpoint. Run these commands from an environment where the `spacefold` package is importable.
+Use an NVIDIA CUDA device with the VolFill sparse modules, spconv and Triton installed. Run `spacefold-setup --geometry-only` once to prepare the pinned VolFill source. The CLI then locates it automatically. To select another existing checkout, pass `--volfill-root`. An already importable VolFill installation also works when the managed checkout is absent. The CLI takes the SpaceFold geometry safetensors checkpoint. Run these commands from an environment where the `spacefold` package is importable.
 
 ```bash
 python -m spacefold.geometry encode \
-  --weights weights/spacefold-geometry.safetensors --volfill-root external/VolFill \
+  --weights weights/spacefold-geometry.safetensors \
   --input scene.tree.npz --output scene.latent.npz
 
 python -m spacefold.geometry decode \
-  --weights weights/spacefold-geometry.safetensors --volfill-root external/VolFill \
+  --weights weights/spacefold-geometry.safetensors \
   --input scene.latent.npz --output reconstructed.points.npz
 ```
 
@@ -47,10 +47,11 @@ For direct use in Python, `TreeBatch.from_trees([tree])` constructs the model in
 ```python
 import torch
 
+from spacefold.dependencies import VOLFILL, cached_source
 from spacefold.geometry import TreeBatch, UnifiedTUDF, load_geometry_checkpoint, register_volfill_source
 from spacefold.geometry.surface import predicted_surface_points
 
-register_volfill_source("external/VolFill")
+register_volfill_source(cached_source(VOLFILL))
 tree = UnifiedTUDF.load("scene.tree.npz")
 model, metadata = load_geometry_checkpoint("weights/spacefold-geometry.safetensors", "cuda")
 with torch.inference_mode(), torch.autocast("cuda", dtype=torch.float16):

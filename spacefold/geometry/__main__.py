@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import os
+from importlib.util import find_spec
 from pathlib import Path
+
+from spacefold.dependencies import VOLFILL, DependencyError, cached_source
 
 
 def _prepare(args):
@@ -125,13 +129,19 @@ def main():
             command.add_argument(
                 "--volfill-root",
                 type=Path,
-                help="Path to the VolFill checkout if its modules are outside the environment",
+                help="Override the managed VolFill source with an existing checkout.",
             )
             command.add_argument("--device", default="cuda", help="CUDA device, for example cuda:0")
         command.set_defaults(handler=handler)
     args = parser.parse_args()
     if args.output.exists():
         parser.error(f"output already exists: {args.output}")
+    if args.command in ("encode", "decode") and args.volfill_root is None:
+        if os.path.lexists(VOLFILL.location()) or find_spec("volfill") is None:
+            try:
+                args.volfill_root = cached_source(VOLFILL)
+            except (DependencyError, OSError) as error:
+                parser.error(str(error))
     args.handler(args)
     print(args.output)
 

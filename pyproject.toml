@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "spacefold-panorama"
-version = "0.1.0.dev0"
+version = "0.1.0.dev1"
 description = "Multiscale 3D autoencoding and panorama-conditioned scene generation"
 readme = "README.md"
 license-files = ["THIRD_PARTY.md"]
@@ -27,6 +27,7 @@ inference = [
 ]
 
 [project.scripts]
+spacefold-setup = "spacefold.dependencies:main"
 spacefold-infer = "spacefold.panorama.infer:main"
 spacefold-geometry = "spacefold.geometry.__main__:main"
 

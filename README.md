@@ -45,19 +45,21 @@ python -m pip install --index-url https://download.pytorch.org/whl/cu121 torch==
 python -m pip install -c requirements-cuda121.txt -e '.[inference]'
 ```
 
-Place the two external source trees in a directory you control. These are the revisions used for validation.
+## Prepare external models
+
+From the environment where you installed SpaceFold, run the following command for the panorama pipeline. It uses curl to fetch source snapshots for the tested VolFill and DA² commits directly from the official GitHub repositories. File names and contents, including upstream licence files, are verified before installation. The flag also downloads the public **1.38 GB DA² checkpoint** from its publisher using curl and verifies its SHA-256 before making it available. Review the [upstream terms](THIRD_PARTY.md) for your intended use.
 
 ```bash
-mkdir -p external
-git clone https://github.com/ngoductuanlhp/VolFill.git external/VolFill
-git -C external/VolFill checkout --detach a0c8e7779ccee318e7a75bb2d273290d4ffb76ed
-git clone https://github.com/EnVision-Research/DA-2.git external/DA-2
-git -C external/DA-2 checkout --detach d659838585f2bc9967c7e9367af573795271dbbb
+spacefold-setup --with-da2-weights
 ```
+
+For just the sources, run `spacefold-setup`. For the geometry encoder and decoder, `spacefold-setup --geometry-only` fetches VolFill. The CPU octree builders already work with the base installation. Repeating setup reuses verified assets. If a managed source was edited, setup reports its path and preserves the changes. An interrupted weight transfer resumes on the next invocation when the server supports byte ranges.
+
+The default cache is `~/Library/Caches/spacefold` on macOS and `~/.cache/spacefold` on Linux. An absolute `XDG_CACHE_HOME` selects its `spacefold/` subdirectory. To use a shared or larger disk, set `SPACEFOLD_CACHE_DIR` to a writable absolute directory outside this checkout and use that setting on the compute machine. Run `spacefold-setup --check --with-da2-weights` there to verify the cache offline. Existing source checkouts and an existing DA² weight file can also be passed through `--volfill-root`, `--da2-root` and `--da2-checkpoint`.
 
 ## Run a panorama
 
-Obtain the model files described in the [checkpoint guide](docs/checkpoints.md). Supply a level, 2:1 equirectangular image. To try a real warehouse interior, the optional example fetches a checksummed photograph directly from its publisher. [Empty Warehouse 01 by Sergej Majboroda, Poly Haven](https://polyhaven.com/a/empty_warehouse_01).
+Supply the two authorized SpaceFold checkpoints and their matched statistics from the [checkpoint guide](docs/checkpoints.md). Supply a level, 2:1 equirectangular image. To try a real warehouse interior, the optional example fetches a checksummed photograph directly from its publisher. [Empty Warehouse 01 by Sergej Majboroda, Poly Haven](https://polyhaven.com/a/empty_warehouse_01).
 
 ```bash
 python examples/fetch_panorama.py examples/downloads/warehouse.jpg
@@ -67,9 +69,6 @@ spacefold-infer \
   --dit-checkpoint weights/spacefold-panorama.safetensors \
   --vae-checkpoint weights/spacefold-geometry.safetensors \
   --latent-stats weights/latent_stats.npz \
-  --da2-root external/DA-2 \
-  --da2-checkpoint weights/da2.safetensors \
-  --volfill-root external/VolFill \
   --steps 50 --guidance 3 --seed 0 \
   --output outputs/warehouse
 ```

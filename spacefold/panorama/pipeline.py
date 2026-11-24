@@ -10,6 +10,8 @@ import numpy as np
 import torch
 from PIL import Image
 
+from spacefold._atomic import result_directory
+from spacefold.dependencies import panorama_paths
 from spacefold.geometry import TreeBatch, load_geometry_checkpoint, register_volfill_source
 from spacefold.geometry.surface import (
     audit_edt_crops,
@@ -21,7 +23,6 @@ from spacefold.geometry.surface import (
 )
 
 from . import _validate_camera_height, _validate_sampling
-from ._output import result_directory
 from .backbones import load_depth_backbone, panorama_features
 from .frame import CAMERA_TO_WORLD, RoomFrame, room_from_distance
 from .model import (
@@ -114,10 +115,10 @@ def generate(
     panorama: Path,
     dit_checkpoint: Path,
     vae_checkpoint: Path,
-    da2_checkpoint: Path,
+    da2_checkpoint: Path | None = None,
     latent_stats: Path,
-    da2_root: Path,
-    volfill_root: Path,
+    da2_root: Path | None = None,
+    volfill_root: Path | None = None,
     camera_height: float,
     output: Path,
     steps: int = 50,
@@ -136,6 +137,9 @@ def generate(
     torch.cuda.set_device(target.index if target.index is not None else torch.cuda.current_device())
     if not torch.cuda.is_bf16_supported():
         raise RuntimeError("SpaceFold panorama inference requires a CUDA GPU with BF16 support")
+    volfill_root, da2_root, da2_checkpoint = panorama_paths(
+        volfill_root=volfill_root, da2_root=da2_root, da2_checkpoint=da2_checkpoint
+    )
     register_volfill_source(volfill_root)
     torch.set_num_threads(2)
     with result_directory(output) as work:
