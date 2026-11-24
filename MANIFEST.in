@@ -1,0 +1,4 @@
+include requirements-cuda121.txt
+include THIRD_PARTY.md
+include examples/fetch_panorama.py
+recursive-include docs *.md

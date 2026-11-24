@@ -1,0 +1,13 @@
+# Constraints for the tested Linux x86-64 / Python 3.10 configuration.
+# Install the PyTorch CUDA wheels first, then pass this file to pip with -c.
+torch==2.4.1
+torchvision==0.19.1
+triton==3.0.0
+spconv-cu120==2.3.6
+cumm-cu120==0.4.11
+numpy==1.26.4
+scipy==1.15.2
+Pillow==12.2.0
+safetensors==0.8.0
+einops==0.8.2
+huggingface-hub==0.34.4
