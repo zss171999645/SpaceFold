@@ -6,7 +6,7 @@ SpaceFold takes one **level, 2:1 equirectangular RGB image** and a camera height
 
 | Input | Expected contents |
 | --- | --- |
-| Panorama | A level indoor panorama in a Pillow-supported image format. The pipeline resizes it to 2048 × 1024. |
+| Panorama | A level indoor panorama in a Pillow-supported image format. The pipeline applies EXIF orientation, checks the displayed 2:1 aspect ratio and resizes the RGB image to 2048 × 1024. |
 | Generator | SpaceFold safetensors containing the trained DiT and the panorama token projector. |
 | Geometry VAE | SpaceFold geometry safetensors for the 16-channel, 32³ scene latent. |
 | Latent statistics | Numeric NPZ containing `mean` and `std`, each float32 with shape `(16,)`. Use the statistics accompanying the checkpoints. |
@@ -40,7 +40,7 @@ The intermediate files document each stage of reconstruction.
 
 | File | Contents |
 | --- | --- |
-| `scene.json` | Camera pose and height, fitted relative-to-metric distance scale, bounds, sampler settings and point counts by octree resolution. |
+| `scene.json` | SHA-256 of the original panorama file, camera pose and height, fitted relative-to-metric distance scale, bounds, sampler settings and point counts by octree resolution. |
 | `da2_distance_fp32.npy` | Relative radial distance at the native 546 × 1092 pixel centres. |
 | `visible_native_tree.npz` | The octree built from all in-bounds visible depth pixels. |
 | `visible_latent_fp16.npy` | Posterior mean of the visible octree, rounded to FP16 as during training. |
@@ -48,7 +48,9 @@ The intermediate files document each stage of reconstruction.
 
 ## Sampling from existing conditioning tensors
 
-The image pipeline fits the radial depth scale from downward rays, infers a room-sized cube, builds a 64→1024 visible distance octree and encodes it with the geometry VAE. For the image condition, SpaceFold bilinearly samples three DA² feature levels along 2,048 target-frame rays, concatenates the samples and applies a learned LayerNorm and linear projection. The sampler conditions on both the projected image tokens and the normalized visible latent.
+The image pipeline takes the 90th percentile of the vertical drop along downward rays whose vertical component has magnitude at least 0.25. Dividing the supplied camera height by this drop converts relative radial distance to metres. SpaceFold fits a bounding cube to the resulting points, builds a 64→1024 visible distance octree and encodes it with the geometry VAE.
+
+For the image condition, SpaceFold transforms 2,048 fixed Fibonacci-sphere directions into the camera frame and bilinearly samples three DA² feature maps with horizontal wraparound. The 512, 256 and 128 channels form an 896-dimensional vector. A learned LayerNorm and linear projection produce 768 channels. The model adds a 768-dimensional directional encoding made from the sines and cosines of latitude and longitude at integer frequencies 1 through 192. The single-image command treats every input pixel as observed. These tokens feed cross-attention in the 960-channel DiT. The sampler also receives the normalized visible latent at every Euler step.
 
 Applications that already have compatible tensors can call the sampler directly. `image_tokens` must contain the trained projector's **BF16** outputs in target-frame ray order, shape `(1, 2048, 768)`. `visible_mean` must contain the geometry encoder's **unnormalized** posterior mean, shape `(16, 32, 32, 32)`, in the same scene frame. This path loads the SpaceFold DiT weights and VolFill architecture and reads no panorama or DA² checkpoint.
 
@@ -77,4 +79,4 @@ normalized = sample_latent(
 raw = normalized * std + mean
 ```
 
-The sampler returns a CPU float32 tensor. Use the bounds associated with the input visible scene when decoding its raw latent.
+The sampler returns a CPU float32 tensor. Use the bounds associated with the input visible scene when decoding its raw latent. The seed fixes the starting CUDA noise. GPU kernels and library versions can affect the decoded surface even when the seed and input files are identical.

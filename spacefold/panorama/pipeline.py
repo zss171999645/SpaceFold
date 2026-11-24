@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import hashlib
 import json
+from io import BytesIO
 from pathlib import Path
 
 import numpy as np
 import torch
-from PIL import Image
+from PIL import Image, ImageOps
 
 from spacefold._atomic import result_directory
 from spacefold.dependencies import panorama_paths
@@ -34,8 +35,12 @@ from .model import (
 )
 
 
-def _image(path: Path) -> torch.Tensor:
-    with Image.open(path) as image:
+def _image(path: Path) -> tuple[torch.Tensor, str]:
+    """Decode the upright panorama and identify the exact bytes used for inference."""
+    encoded = path.read_bytes()
+    with Image.open(BytesIO(encoded)) as source:
+        orientation = source.getexif().get(274, 1)
+        image = source if orientation == 1 else ImageOps.exif_transpose(source)
         if image.width != image.height * 2:
             raise ValueError(
                 f"Expected a level 2:1 panorama, received {image.width} × {image.height}"
@@ -43,7 +48,8 @@ def _image(path: Path) -> torch.Tensor:
         pixels = np.array(
             image.convert("RGB").resize((2048, 1024), Image.Resampling.BICUBIC), copy=True
         )
-    return torch.from_numpy(pixels).permute(2, 0, 1)[None].float() / 255.0
+    rgb = torch.from_numpy(pixels).permute(2, 0, 1)[None].float() / 255.0
+    return rgb, hashlib.sha256(encoded).hexdigest()
 
 
 def _image_conditions(image, da2_root, da2_checkpoint, dit_checkpoint, device):
@@ -144,8 +150,8 @@ def generate(
     torch.set_num_threads(2)
     with result_directory(output) as work:
         mean, std = load_latent_stats(latent_stats)
-        image = _image(panorama).to(target)
-        rgb_digest = hashlib.sha256(panorama.read_bytes()).hexdigest()
+        image, rgb_digest = _image(panorama)
+        image = image.to(target)
         print("Estimating radial distance and panorama image tokens", flush=True)
         distance, tokens, metadata = _image_conditions(
             image, da2_root, da2_checkpoint, dit_checkpoint, target
