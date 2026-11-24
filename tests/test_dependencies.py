@@ -1,6 +1,8 @@
 """Offline regression tests for the public setup command. Run with unittest discover."""
 
 import os
+import select
+import signal
 import subprocess
 import sys
 import tempfile
@@ -28,6 +30,49 @@ def setup(cache: Path, *arguments: str) -> subprocess.CompletedProcess[str]:
 
 
 class DependencySetupTests(unittest.TestCase):
+    def test_interrupt_while_waiting_for_setup_offers_a_retry(self):
+        import fcntl
+
+        with tempfile.TemporaryDirectory() as temp:
+            cache = Path(temp)
+            with (cache / ".setup.lock").open("wb") as lock:
+                fcntl.flock(lock, fcntl.LOCK_EX)
+                with subprocess.Popen(
+                    [sys.executable, "-B", "-m", "spacefold.dependencies", "--geometry-only"],
+                    cwd=ROOT,
+                    env={**os.environ, "SPACEFOLD_CACHE_DIR": str(cache), "PATH": ""},
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    text=True,
+                ) as process:
+                    ready, _, _ = select.select([process.stdout], [], [], 10)
+                    process.send_signal(signal.SIGINT)
+                    fcntl.flock(lock, fcntl.LOCK_UN)
+                    _, error = process.communicate(timeout=15)
+            self.assertTrue(ready, "Setup did not report its cache before waiting for the lock")
+            self.assertEqual(process.returncode, 130)
+            self.assertIn("Rerun", error)
+            self.assertNotIn("Traceback", error)
+
+    def test_example_reports_an_existing_broken_link_before_downloading(self):
+        with tempfile.TemporaryDirectory() as temp:
+            destination = Path(temp) / "warehouse.jpg"
+            target = Path(temp) / "unavailable.jpg"
+            destination.symlink_to(target)
+            result = subprocess.run(
+                [sys.executable, "-B", str(ROOT / "examples/fetch_panorama.py"), str(destination)],
+                env={**os.environ, "https_proxy": "http://127.0.0.1:1", "no_proxy": ""},
+                capture_output=True,
+                text=True,
+                timeout=15,
+            )
+            self.assertEqual(result.returncode, 1)
+            self.assertIn("Choose a new path", result.stderr)
+            self.assertIn(str(destination), result.stderr)
+            self.assertNotIn("Traceback", result.stderr)
+            self.assertTrue(destination.is_symlink())
+            self.assertFalse(target.exists())
+
     def test_offline_check_reports_each_missing_source_without_creating_cache(self):
         with tempfile.TemporaryDirectory() as temp:
             cache = Path(temp) / "not-created"

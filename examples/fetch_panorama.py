@@ -8,6 +8,7 @@ Terms: https://polyhaven.com/license
 import argparse
 import hashlib
 import os
+from http.client import HTTPException
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from urllib.request import Request, urlopen
@@ -24,7 +25,7 @@ def verified_existing(path: Path) -> bool:
 
 
 def fetch(destination: Path) -> Path:
-    if destination.exists():
+    if os.path.lexists(destination):
         if verified_existing(destination):
             return destination
         raise FileExistsError(f"Choose a new path or move the existing file: {destination}")
@@ -62,7 +63,13 @@ def main() -> None:
     parser.add_argument(
         "destination", type=Path, nargs="?", default=Path("examples/downloads/warehouse.jpg")
     )
-    path = fetch(parser.parse_args().destination)
+    args = parser.parse_args()
+    try:
+        path = fetch(args.destination)
+    except KeyboardInterrupt:
+        parser.exit(130, "\nPanorama download interrupted. Rerun the same command to retry.\n")
+    except (OSError, HTTPException, ValueError) as error:
+        parser.exit(1, f"{error}\n")
     print(f"{path}  (SHA-256 {SHA256})")
 
 

@@ -368,15 +368,18 @@ def main() -> None:
         help="Verify the selected assets offline without writing files.",
     )
     args = parser.parse_args()
-    print(f"SpaceFold dependency cache: {cache_dir()}", flush=True)
     try:
+        root = cache_dir()
+        print(f"SpaceFold dependency cache: {root}", flush=True)
         if args.check:
             errors = _assets(args.geometry_only, args.with_da2_weights, fetch=False)
             if errors:
                 parser.exit(1, "\n".join(errors) + "\n")
         else:
-            with _setup_lock(cache_dir()):
+            with _setup_lock(root):
                 _assets(args.geometry_only, args.with_da2_weights, fetch=True)
+    except KeyboardInterrupt:
+        parser.exit(130, "\nSetup interrupted. Rerun the same command to continue.\n")
     except (DependencyError, OSError, tarfile.TarError, EOFError) as error:
         parser.exit(1, f"{error}\n")
 
