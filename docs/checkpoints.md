@@ -1,6 +1,6 @@
 # Model files
 
-The single-image pipeline takes two SpaceFold state files, the normalization statistics paired with the generator, and the external DA² model. SpaceFold's learned assets are subject to a separate release decision. Use an authorized copy of the three matched SpaceFold files. The following interface describes the tensor-only inference format.
+The single-image pipeline takes two SpaceFold state files, the normalization statistics paired with the generator, and the external DA² model. We will release the two SpaceFold checkpoints and their matching statistics in a future update. Their inference formats are listed below.
 
 | Input | Contents |
 |---|---|
@@ -16,7 +16,7 @@ spacefold-setup --with-da2-weights
 spacefold-setup --check --with-da2-weights
 ```
 
-The second command verifies the chosen cache offline. Inference reads the cached DA² file automatically. If you already obtained that file, pass its path with `--da2-checkpoint`. Use `--da2-root` and `--volfill-root` to select existing source directories. The two SpaceFold-trained checkpoints and their statistics are supplied separately.
+The second command verifies the chosen cache offline. Inference reads the cached DA² file automatically. If you already obtained that file, pass its path with `--da2-checkpoint`. Use `--da2-root` and `--volfill-root` to select existing source directories.
 
 The SpaceFold codec produces a 16-channel latent on a 32³ grid. The reference generator has 16 transformer blocks, width 960 and 15 attention heads. Its 32 input channels concatenate a noisy target latent and a normalized visible latent. SpaceFold imports model layers from the VolFill source checkout. VolFill's published weights and 16³ training statistics belong to its own model.
 
