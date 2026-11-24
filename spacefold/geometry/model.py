@@ -173,6 +173,11 @@ class UnifiedEncoder(nn.Module):
     def forward(self, batch):
         if tuple(level.resolution for level in batch.levels) != RESOLUTIONS:
             raise ValueError("incorrect encoder tree levels")
+        # spconv uses the current CUDA context for its index construction.
+        with torch.cuda.device_of(batch.levels[0].coords):
+            return self._encode(batch)
+
+    def _encode(self, batch):
         summary = None
         for module, level in reversed(list(zip(self.nodes, batch.levels))):
             summary = module(level, summary, len(batch.sample_ids))
@@ -267,6 +272,10 @@ class UnifiedDecoder(nn.Module):
     def forward(self, z, *, teacher: TreeBatch | None = None):
         if z.ndim != 5 or tuple(z.shape[1:]) != LATENT_SHAPE:
             raise ValueError("expected a latent of shape [B, 16, 32, 32, 32]")
+        with torch.cuda.device_of(z):
+            return self._decode(z, teacher)
+
+    def _decode(self, z, teacher):
         h = self.middle_block(self.input_layer(z))
         for block in self.trunk:
             h = block(h)

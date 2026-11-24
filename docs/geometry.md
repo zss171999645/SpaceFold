@@ -50,7 +50,11 @@ python -m spacefold.geometry decode \
   --input scene.latent.npz --output reconstructed.points.npz
 ```
 
-The latent archive contains the FP16 posterior mean under `raw`, with shape `(16, 32, 32, 32)`, and the two XYZ bounding-box corners. Decoding uses the model’s predicted topology. Its output contains `points`, `bbox_min` and `bbox_max`. Each row of `points` is a float32 voxel center in the original frame. A panorama-generated latent archive with the same `raw` and bounding-box fields can also be decoded.
+Use `--device cuda:1` on either command to select the second visible CUDA device. In Python, put the model, its input tree batch and its input latent on the intended device.
+
+The latent archive contains the FP16 posterior mean under `raw`, with shape `(16, 32, 32, 32)`, and the two XYZ bounding-box corners. Repeated CUDA encodes of the same tree can yield slightly different FP16 values. Retain the raw latent to decode that particular sample again.
+
+Decoding uses the model’s predicted topology. Its output contains `points`, `bbox_min` and `bbox_max`. Each row of `points` is a float32 voxel center in the original frame. A panorama-generated latent archive with the same `raw` and bounding-box fields can also be decoded.
 
 For direct use in Python, `TreeBatch.from_trees([tree])` constructs the model input. Each row of its coordinate tensor is ordered as batch, Z, Y, X. The encoder’s values are normalized with `2 * distance / 3 - 1`. A terminal decoder value at or below `-2/3` corresponds to a surface threshold of half a voxel.
 

@@ -17,9 +17,11 @@ def _layer_norm_fp32(features, weight, bias, eps):
     channels = x.shape[-1]
     rows = x.numel() // channels
     tile = 128
-    layer_norm_tile[((rows + tile - 1) // tile,)](
-        x, weight, bias, y, rows, channels, eps, tile, num_warps=4, enable_fp_fusion=False
-    )
+    # Triton dispatches on the current CUDA device and stream.
+    with torch.cuda.device(x.device):
+        layer_norm_tile[((rows + tile - 1) // tile,)](
+            x, weight, bias, y, rows, channels, eps, tile, num_warps=4, enable_fp_fusion=False
+        )
     return y
 
 
