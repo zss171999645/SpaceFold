@@ -27,7 +27,7 @@ flowchart LR
 
 ## Installation
 
-Run the following commands from the root of this checkout. To use the CPU geometry tools on macOS or Linux:
+Run the following commands from the root of this checkout with Python 3.10 or newer. For the CPU geometry tools on macOS or Linux, create a virtual environment and install SpaceFold.
 
 ```bash
 python -m venv .venv
@@ -55,7 +55,7 @@ spacefold-setup --with-da2-weights
 
 For just the sources, run `spacefold-setup`. For the geometry encoder and decoder, `spacefold-setup --geometry-only` fetches VolFill. The CPU octree builders already work with the base installation. Repeating setup reuses verified assets. If a managed source was edited, setup reports its path and preserves the changes. An interrupted weight transfer resumes on the next invocation when the server supports byte ranges.
 
-The default cache is `~/Library/Caches/spacefold` on macOS and `~/.cache/spacefold` on Linux. An absolute `XDG_CACHE_HOME` selects its `spacefold/` subdirectory. To use a shared or larger disk, set `SPACEFOLD_CACHE_DIR` to a writable absolute directory outside this checkout and use that setting on the compute machine. Run `spacefold-setup --check --with-da2-weights` there to verify the cache offline. Existing source checkouts and an existing DA² weight file can also be passed through `--volfill-root`, `--da2-root` and `--da2-checkpoint`.
+The default cache is `~/Library/Caches/spacefold` on macOS and `~/.cache/spacefold` on Linux. An absolute `XDG_CACHE_HOME` selects its `spacefold/` subdirectory. For a shared or larger disk, set `SPACEFOLD_CACHE_DIR` to a writable absolute path outside this checkout. Use the same path for setup and inference so both find the same files from any working directory. Run `spacefold-setup --check --with-da2-weights` on the compute machine to verify the cache offline. Existing source checkouts and an existing DA² weight file can also be passed through `--volfill-root`, `--da2-root` and `--da2-checkpoint`.
 
 ## Run a panorama
 
@@ -76,6 +76,10 @@ spacefold-infer \
 The example assumes a 1.6 m camera height. For a new image, use the measured camera-to-floor height when available. The accepted range is 0.5–3.0 m. Choose a fresh output directory.
 
 Open `generated_geometry.ply` in a point-cloud viewer. `prediction_points.npz` stores float32 XYZ positions in metres and the scene bounds. The axes point right, forward and up. `scene.json` records the input hash, camera height, sampling settings and point count. The [panorama guide](docs/panorama.md) describes the intermediate distance field, visible octree, geometry latents and the API for sampling from compatible precomputed conditions.
+
+## Run the checks
+
+From the checkout, run `python -m unittest discover -s tests -v` to exercise the setup command and CPU geometry routines. To include the panorama orientation check, install the inference dependencies and fetch the example photograph using the command above. The tests use `examples/downloads/warehouse.jpg` by default.
 
 ## Sources and licensing
 
