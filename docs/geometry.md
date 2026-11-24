@@ -24,6 +24,16 @@ For an existing three-level envelope in the `octree_bitmask_palette4_v2` format,
 python -m spacefold.geometry prepare --input envelope.npz --output scene.tree.npz
 ```
 
+The compact envelope uses the same XYZ bounds as a point archive. Its scalar fields are `storage_format="octree_bitmask_palette4_v2"`, `base_resolution=256` and `truncation_voxels=3`. The base grid and the eight children within each refined node use ZYX raster order with X varying fastest.
+
+| Array | Contents |
+| --- | --- |
+| `base_tudf` | Float16 distances on the full `(256, 256, 256)` grid, from zero to three voxels. |
+| `refine_base_mask_bits` | A flat uint8 array of length `256³ / 8`. The low bit marks the first base voxel in each group of eight. |
+| `refine_middle_child_mask` | One uint8 per refined R256 parent, in base raster order. Bit `4*dz + 2*dy + dx` marks the R512 child to split. |
+| `middle_children_codes4`, `fine_children_codes4` | Four uint8 values per refined parent at R256 and R512 respectively. Each byte encodes two child distances, low nibble first. R512 parents follow the order of the set bits in `refine_middle_child_mask`, scanning each byte from low to high. |
+| `tudf_palette` | The float16 codebook in ascending code order is `[0, 1, √2, √3, 2, √5, √6, √8, 3]`. |
+
 Both commands write a new tree file. Use a distinct output name for each input.
 
 ## Encode and decode

@@ -135,7 +135,7 @@ def main():
             command.add_argument("--device", default="cuda", help="CUDA device, for example cuda:0")
         command.set_defaults(handler=handler)
     args = parser.parse_args()
-    if args.output.exists():
+    if os.path.lexists(args.output):
         parser.error(f"output already exists: {args.output}")
     if args.command in ("encode", "decode") and args.volfill_root is None:
         if os.path.lexists(VOLFILL.location()) or find_spec("volfill") is None:

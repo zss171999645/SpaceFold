@@ -33,7 +33,9 @@ def pack_tudf_palette4(values: np.ndarray) -> np.ndarray:
 def unpack_tudf_palette4(
     packed: np.ndarray, *, palette: np.ndarray = TUDF_PALETTE_FLOAT16
 ) -> np.ndarray:
-    values = np.asarray(packed, dtype=np.uint8)
+    values = np.asarray(packed)
+    if values.dtype != np.uint8:
+        raise ValueError(f"packed TUDF values must be uint8, got {values.dtype}")
     if values.ndim != 2 or values.shape[1] != 4:
         raise ValueError(f"expected packed TUDF values [N,4], got {values.shape}")
     codes = np.empty((len(values), 8), dtype=np.uint8)
@@ -120,6 +122,8 @@ class AdaptiveTUDF:
             raise ValueError("base TUDF must be cubic")
         if self.base_tudf.dtype != np.float16:
             raise ValueError("base TUDF must be float16")
+        if not ((self.base_tudf >= 0).all() and (self.base_tudf <= self.truncation_voxels).all()):
+            raise ValueError("base TUDF values must lie inside the truncated distance range")
         if self.middle_children_tudf.shape != (
             len(self.refine_base_parent_zyx),
             8,
