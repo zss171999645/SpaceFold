@@ -1,9 +1,33 @@
 """Publish a completed directory without overwriting existing content."""
 
+import ctypes
+import errno
 import os
+import sys
 from contextlib import contextmanager, suppress
 from pathlib import Path
 from tempfile import TemporaryDirectory
+
+
+def _rename_exclusive(source: Path, destination: Path) -> bool:
+    """Publish with one no-replace rename when the platform and filesystem support it."""
+    if sys.platform == "darwin":
+        name, cwd, flag = "renameatx_np", -2, 4  # AT_FDCWD, RENAME_EXCL
+    elif sys.platform == "linux":
+        name, cwd, flag = "renameat2", -100, 1  # AT_FDCWD, RENAME_NOREPLACE
+    else:
+        return False
+    rename = getattr(ctypes.CDLL(None, use_errno=True), name, None)
+    if rename is None:
+        return False
+    # Preserve the Python audit event that os.rename would issue.
+    sys.audit("os.rename", os.fspath(source), os.fspath(destination), -1, -1)
+    if rename(cwd, os.fsencode(source), cwd, os.fsencode(destination), flag) == 0:
+        return True
+    error = ctypes.get_errno()
+    if error in (errno.ENOSYS, errno.ENOTSUP, errno.EINVAL):
+        return False
+    raise OSError(error, os.strerror(error), str(destination))
 
 
 @contextmanager
@@ -15,8 +39,10 @@ def result_directory(destination: Path):
         result = Path(staging) / "result"
         result.mkdir()
         yield result
+        if _rename_exclusive(result, destination):
+            return
 
-        # mkdir is exclusive even if another run finished during sampling.
+        # Older filesystems still need an exclusive reservation to preserve existing output.
         destination.mkdir()
         reservation = destination.lstat()
         try:
