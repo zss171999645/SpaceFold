@@ -4,11 +4,12 @@
 <p align="center">
   <a href="https://zhoufeng.ai/">Feng Zhou</a><sup>1*‡</sup> &ensp; Xiaojun Xiang<sup>2*</sup> &ensp;
   Xiaoyu Zhang<sup>2</sup> &ensp; Zhaopei Han<sup>1</sup><br>
-  Pu Cao<sup>1</sup> &ensp; Jianqin Yin<sup>1†</sup> &ensp; Guofeng Zhang<sup>2</sup> &ensp; Haomin Liu<sup>2§</sup>
+  Pu Cao<sup>1</sup> &ensp; Jianqin Yin<sup>1†</sup> &ensp; Guofeng Zhang<sup>2,3†</sup> &ensp; Haomin Liu<sup>2</sup>
 </p>
 <p align="center">
-  <sup>1</sup> Beijing University of Posts and Telecommunications &ensp; <sup>2</sup> InSpatio<br>
-  <sub>* Equal contribution &nbsp; · &nbsp; † Corresponding author &nbsp; · &nbsp; ‡ Work done during an internship at InSpatio &nbsp; · &nbsp; § Project leader</sub>
+  <sup>1</sup> Beijing University of Posts and Telecommunications<br>
+  <sup>2</sup> InSpatio &ensp; <sup>3</sup> State Key Lab of CAD&amp;CG, Zhejiang University<br>
+  <sub>* Equal contribution &nbsp; · &nbsp; † Corresponding authors &nbsp; · &nbsp; ‡ Work done during an internship at InSpatio</sub>
 </p>
 
 <p align="center">
